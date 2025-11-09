@@ -1,0 +1,985 @@
+<!-- Chosen Palette: Warm Neutral (Tons de Cinza/Laranja/Marrom) -->
+<!-- Application Structure Plan: A estrutura foi simplificada. A seção de "Análise" foi removida. O foco total está no "Teste Seu Conhecimento". Os textos de contexto (poema, fábula, etc.) foram movidos para dentro dos enunciados das próprias questões no array JS. Para isso, o <p id="question-text"> foi mudado para um <div id="question-text"> para permitir a inserção de HTML (um div de contexto com fonte menor + o texto da questão). -->
+<!-- Visualization & Content Choices: 1) Métricas Principais: Mantidas. 2) Gráfico de Rosca: Mantido. 3) Quiz Interativo (50 Questões): Agora é a funcionalidade principal. O array quizData foi reestruturado para incluir o HTML do contexto em cada 'question', usando classes de fonte menor (text-sm) para responsividade, como solicitado. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulado - Prova OP</title>
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .nav-link-active {
+            border-bottom-width: 2px;
+            border-color: #ea580c;
+            color: #ea580c;
+        }
+        .quiz-option {
+            transition: all 0.2s ease;
+        }
+        .quiz-option:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            background-color: #fef3c7;
+        }
+        .quiz-option:disabled {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+        .quiz-correct {
+            background-color: #22c55e;
+            color: white;
+            border-color: #16a34a;
+        }
+        .quiz-wrong {
+            background-color: #ef4444;
+            color: white;
+            border-color: #dc2626;
+        }
+        .quiz-reveal-correct {
+            background-color: #d1fae5;
+            border: 2px solid #10b981;
+        }
+        #next-question-btn {
+            transition: opacity 0.3s ease;
+        }
+        .hidden {
+            display: none;
+        }
+        .quiz-context-text {
+            font-size: 0.9rem;
+            color: #374151;
+            background-color: rgba(255, 255, 255, 0.6);
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            text-align: left;
+            line-height: 1.6;
+            white-space: pre-line;
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex flex-wrap justify-between items-center">
+            <h1 class="text-2xl font-bold text-orange-600">
+                Simulado - Prova OP 2024
+            </h1>
+            <div id="nav-links" class="flex space-x-6 mt-4 sm:mt-0">
+                <a href="#home" class="nav-link text-gray-600 hover:text-orange-600 font-medium pb-1">Visão Geral</a>
+                <a href="#interactive" class="nav-link text-gray-600 hover:text-orange-600 font-medium pb-1">Teste Seu Conhecimento</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-6 mt-8">
+
+        <section id="home" class="mb-20 scroll-mt-20">
+            <h2 class="text-3xl font-semibold text-gray-900 mb-4">Visão Geral da Prova</h2>
+            <p class="text-lg text-gray-700 mb-8 max-w-3xl">
+                Esta aplicação analisa interativamente o 1º Torneio da OP (2024), Categoria C (6º ano), com base nas questões e gabaritos fornecidos. O objetivo é transformar o documento estático em um relatório explorável, destacando as habilidades avaliadas, o formato da prova e os principais insights.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-orange-500">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">Tempo de Prova</h3>
+                    <p class="text-4xl font-bold text-gray-900">1 Hora</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-orange-500">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">Pontuação Máxima</h3>
+                    <p class="text-4xl font-bold text-gray-900">100 Pontos</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-orange-500">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">Foco Principal</h3>
+                    <p class="text-4xl font-bold text-gray-900">Lógica & Inferência</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-xl">
+                <h3 class="text-2xl font-semibold text-gray-900 mb-6 text-center">Tópicos Abordados (Amostra)</h3>
+                <p class="text-center text-gray-600 mb-6">
+                    Com base nas questões de amostra, a prova distribui seu foco além da gramática tradicional, testando intensamente a lógica e a interpretação.
+                </p>
+                <div class="chart-container">
+                    <canvas id="topicsChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="interactive" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-semibold text-gray-900 mb-4">Teste Seu Conhecimento</h2>
+            <p class="text-lg text-gray-700 mb-10 max-w-3xl">
+                Resolva as 50 questões da apostila. Os textos de referência estão incluídos em cada questão. Você receberá o feedback instantaneamente.
+            </p>
+
+            <div class="bg-white p-8 rounded-lg shadow-xl max-w-3xl mx-auto">
+                
+                <div id="quiz-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-gray-900">Questão <span id="question-number">1</span> de 50</h3>
+                        <p class="text-lg font-bold text-green-600">Acertos: <span id="score">0</span></p>
+                    </div>
+                    
+                    <div class="bg-gray-100 p-6 rounded-lg mb-6">
+                        <div id="question-text" class="text-lg font-medium text-gray-800"></div>
+                    </div>
+
+                    <div id="quiz-options" class="flex flex-col space-y-4">
+                    </div>
+
+                    <div id="quiz-feedback" class="mt-6 text-md font-medium h-16"></div>
+
+                    <button id="next-question-btn" class="hidden w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors duration-200">
+                        Próxima Questão
+                    </button>
+                </div>
+
+                <div id="quiz-results" class="hidden text-center">
+                    <h3 class="text-3xl font-bold text-gray-900 mb-6">Teste Finalizado!</h3>
+                    <p class="text-xl text-gray-700 mb-8">Veja seu desempenho:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div class="bg-blue-100 p-6 rounded-lg shadow-md">
+                            <h4 class="text-lg font-semibold text-blue-800 mb-2">Total de Questões</h4>
+                            <p class="text-4xl font-bold text-blue-900">50</p>
+                        </div>
+                        <div class="bg-green-100 p-6 rounded-lg shadow-md">
+                            <h4 class="text-lg font-semibold text-green-800 mb-2">Respostas Corretas</h4>
+                            <p id="results-correct" class="text-4xl font-bold text-green-900">0</p>
+                        </div>
+                        <div class="bg-red-100 p-6 rounded-lg shadow-md">
+                            <h4 class="text-lg font-semibold text-red-800 mb-2">Respostas Erradas</h4>
+                            <p id="results-wrong" class="text-4xl font-bold text-red-900">0</p>
+                        </div>
+                    </div>
+                    <div class="mt-10">
+                        <h4 class="text-2xl font-semibold text-gray-800">Percentual de Acerto</h4>
+                        <p id="results-percentage" class="text-6xl font-bold text-orange-600 mt-2">0%</p>
+                    </div>
+                    <button id="restart-quiz-btn" class="mt-10 w-full max-w-xs mx-auto bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors duration-200">
+                        Tentar Novamente
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-gray-300 text-center p-6 mt-16">
+        <p>&copy; 2025 - Aplicação de Teste Simulado Interativo</p>
+        <p class="text-sm text-gray-400">Desenvolvido por Elan Deol</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const chartCtx = document.getElementById('topicsChart').getContext('2d');
+            new Chart(chartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Lógica Fonética', 'Vocabulário', 'Inferência de Contexto', 'Inferência Lógica'],
+                    datasets: [{
+                        label: 'Nº de Questões (Amostra)',
+                        data: [1, 1, 2, 2],
+                        backgroundColor: [
+                            '#fdba74',
+                            '#f97316',
+                            '#ea580c',
+                            '#c2410c' 
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#4b5563',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#333',
+                            titleFont: { size: 16 },
+                            bodyFont: { size: 14 },
+                            padding: 12,
+                            cornerRadius: 6
+                        }
+                    }
+                }
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            function updateActiveLink() {
+                let currentSection = 'home';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) { 
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('nav-link-active');
+                    if (link.getAttribute('href') === `#${currentSection}`) {
+                        link.classList.add('nav-link-active');
+                    }
+                });
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    navLinks.forEach(el => el.classList.remove('nav-link-active'));
+                    e.target.classList.add('nav-link-active');
+                });
+            });
+            
+            window.addEventListener('scroll', updateActiveLink);
+            updateActiveLink();
+
+            const POEMA_CECILIA = `<div class='quiz-context-text'><strong>Leia o poema 'Ou Isto ou Aquilo' (Cecília Meireles):</strong>
+
+Ou se tem chuva e não se tem sol,
+ou se tem sol e não se tem chuva!
+
+Ou se calça a luva e não se põe o anel,
+ou se põe o anel e não se calça a luva!
+
+Quem sobe nos ares não fica no chão,
+quem fica no chão não sobe nos ares.
+
+É uma grande pena que não se possa
+estar ao mesmo tempo nos dois lugares!
+
+Ou guardo o dinheiro e não compro o doce,
+ou compro o doce e gasto o dinheiro.
+
+Ou isto ou aquilo: ou isto ou aquilo...
+e vivo escolhendo o dia inteiro!
+
+Não sei se brinco, não sei se estudo,
+se saio correndo ou fico tranquilo.
+
+Mas não consegui entender ainda
+qual é melhor: se é isto ou aquilo.</div>`;
+
+            const TIRINHA_ARMANDINHO = `<div class='quiz-context-text'><strong>Observe a descrição da tirinha (Armandinho):</strong>
+
+<b>Quadrinho 1:</b> Armandinho está na praia, olhando para o mar, que está cheio de lixo (garrafas, sacolas).
+<b>Quadrinho 2:</b> Ele se vira para seu pai e pergunta: "Pai, você me disse que o mar estava 'impróprio para banho'."
+<b>Quadrinho 3:</b> O pai, coçando a cabeça, responde: "Sim, filho. A análise da água disse isso."
+<b>Quadrinho 4:</b> Armandinho aponta para o lixo e diz: "Achei que era por causa da falta de educação das pessoas!"</div>`;
+            
+            const FABULA_LEAO = `<div class='quiz-context-text'><strong>Leia a fábula 'O Leão e o Ratinho':</strong>
+
+Um leão, cansado de tanto caçar, dormia espichado à sombra de uma boa árvore. Vieram uns ratinhos passear em cima dele e ele acordou. Todos conseguiram fugir, menos um, que o leão prendeu debaixo da pata.
+Tanto o ratinho pediu e implorou que o leão desistiu de esmagá-lo e deixou que fosse embora.
+Algum tempo depois, o leão caiu numa rede deixada por caçadores. Não conseguindo se soltar, fazia a floresta inteira tremer com seus urros de raiva.
+Nisso, apareceu o ratinho. Com seus dentes afiados, roeu as cordas e soltou o leão.</div>`;
+
+            const TEXTO_AVIAO = `<div class='quiz-context-text'><strong>Leia o texto 'Como fazer um avião de papel simples':</strong>
+
+1. Pegue uma folha de papel retangular (como uma folha sulfite A4).
+2. Dobre a folha ao meio no sentido do comprimento (vertical). Em seguida, abra-a. Isso cria uma marca de centro.
+3. Dobre os dois cantos superiores para dentro, até que eles se encontrem na marca do centro.
+4. Agora, dobre o "bico" (a ponta de cima) para baixo, até que ele toque a borda inferior do papel.
+5. Repita o passo 3: dobre os novos cantos superiores (das "abas") até a linha do centro.
+6. Dobre o pequeno "bico" que sobrou para cima, prendendo as abas que você acabou de dobrar.
+7. Finalmente, dobre o avião ao meio (para fora), seguindo a primeira marca de centro.
+8. Dobre as asas para baixo, uma de cada vez.
+9. Abra as asas e seu avião está pronto para voar!</div>`;
+
+            const TEXTO_NOTICIA = `<div class='quiz-context-text'><strong>Leia a notícia fictícia:</strong>
+
+*São Paulo, 10 de novembro.* Uma rápida e intensa tempestade de vento atingiu a capital paulista na tarde de ontem, causando surpresa e alguns transtornos. Rajadas de vento de até 80 km/h foram registradas, derrubando árvores e galhos em várias regiões. A companhia elétrica informou que cerca de 50 mil residências ficaram sem energia, principalmente nas zonas Oeste e Sul. Equipes de emergência trabalharam durante a noite para restaurar a energia e limpar as vias. Felizmente, não houve registro de feridos graves.</div>`;
+
+
+            const quizData = [
+                {
+                    question: POEMA_CECILIA + "Qual é o sentimento principal expresso pelo eu-lírico (a voz do poema) em relação às escolhas?",
+                    options: [
+                        "Raiva, pois nunca pode fazer o que quer.",
+                        "Indecisão, pois cada escolha significa perder outra coisa.",
+                        "Alegria, pois tem muitas opções diferentes.",
+                        "Tristeza, pois não tem nenhuma escolha.",
+                        "Certeza, pois sabe exatamente o que é melhor."
+                    ],
+                    answer: "Indecisão, pois cada escolha significa perder outra coisa."
+                },
+                {
+                    question: POEMA_CECILIA + "Na segunda estrofe ('Ou se calça a luva...'), o que o anel e a luva simbolizam?",
+                    options: [
+                        "Riqueza e pobreza.",
+                        "Duas ações que não podem ser feitas ao mesmo tempo no mesmo lugar.",
+                        "O calor e o frio.",
+                        "Um presente e uma compra.",
+                        "A mão direita e a mão esquerda."
+                    ],
+                    answer: "Duas ações que não podem ser feitas ao mesmo tempo no mesmo lugar."
+                },
+                {
+                    question: POEMA_CECILIA + "A repetição da estrutura 'Ou...' e 'não se tem...' ao longo do poema serve para:",
+                    options: [
+                        "Criticar as pessoas que não sabem escolher.",
+                        "Mostrar que as coisas podem acontecer ao mesmo tempo.",
+                        "Ensinar o leitor a economizar dinheiro.",
+                        "Reforçar a ideia de que uma escolha exclui a outra.",
+                        "Criar um som de chuva caindo."
+                    ],
+                    answer: "Reforçar a ideia de que uma escolha exclui a outra."
+                },
+                {
+                    question: POEMA_CECILIA + "No final do poema, o eu-lírico conclui que:",
+                    options: [
+                        "Finalmente entendeu o que é melhor.",
+                        "O melhor é sempre guardar o dinheiro.",
+                        "Sair correndo é melhor que ficar tranquilo.",
+                        "Continua sem saber qual escolha é a melhor.",
+                        "Estudar é sempre a decisão correta."
+                    ],
+                    answer: "Continua sem saber qual escolha é a melhor."
+                },
+                {
+                    question: TIRINHA_ARMANDINHO + "A palavra 'impróprio' (Quadrinho 2) significa que o mar estava:",
+                    options: [
+                        "Muito divertido.",
+                        "Exclusivo para adultos.",
+                        "Não adequado, perigoso ou sujo.",
+                        "Limpo e transparente.",
+                        "Fundo demais."
+                    ],
+                    answer: "Não adequado, perigoso ou sujo."
+                },
+                {
+                    question: TIRINHA_ARMANDINHO + "Qual a diferença entre a suposição de Armandinho e a explicação do pai?",
+                    options: [
+                        "O pai fala do lixo visível e Armandinho da sujeira invisível.",
+                        "O pai fala da sujeira invisível (análise da água) e Armandinho do lixo visível (falta de educação).",
+                        "Ambos estão falando sobre os peixes estarem doentes.",
+                        "O pai acha que o mar está bom, e Armandinho acha que está ruim.",
+                        "Não há nenhuma diferença, eles dizem a mesma coisa."
+                    ],
+                    answer: "O pai fala da sujeira invisível (análise da água) e Armandinho do lixo visível (falta de educação)."
+                },
+                {
+                    question: TIRINHA_ARMANDINHO + "A fala final de Armandinho ('Achei que era por causa da falta de educação...') demonstra:",
+                    options: [
+                        "Ignorância, pois ele não sabe o que é 'análise da água'.",
+                        "Ironia, pois ele critica a poluição causada pelas pessoas.",
+                        "Medo, pois ele não quer entrar no mar.",
+                        "Felicidade, pois ele prefere brincar na areia.",
+                        "Raiva do pai, que não o deixou nadar."
+                    ],
+                    answer: "Ironia, pois ele critica a poluição causada pelas pessoas."
+                },
+                {
+                    question: "Bia está comendo um sanduíche muito grande e com a boca cheia, mal conseguindo mexer os lábios. Qual das palavras abaixo ela teria *mais facilidade* para pronunciar?",
+                    options: [
+                        "Papai",
+                        "Mamãe",
+                        "Vovó",
+                        "Legal",
+                        "Bebê"
+                    ],
+                    answer: "Legal"
+                },
+                {
+                    question: "Leo sempre mente. Gabi às vezes mente. Caio sempre fala a verdade. Um deles diz: 'Eu não sou o Leo.' Quem, com certeza, *não* pode ter dito essa frase?",
+                    options: [
+                        "Leo",
+                        "Gabi",
+                        "Caio",
+                        "Gabi ou Caio",
+                        "Não é possível saber."
+                    ],
+                    answer: "Leo"
+                },
+                {
+                    question: "Qual das palavras abaixo, se lida de trás para frente, forma uma palavra diferente que *também* existe na língua portuguesa?",
+                    options: [
+                        "OVO",
+                        "OSSO",
+                        "AMOR",
+                        "ANA",
+                        "CASA"
+                    ],
+                    answer: "AMOR"
+                },
+                {
+                    question: "Se você tentar dizer 'Fui ao mercado' sem usar a língua para tocar o céu da boca ou os dentes, qual som será o mais difícil de produzir?",
+                    options: [
+                        "O som de 'F'",
+                        "O som de 'M'",
+                        "O som de 'C' (em 'mercado')",
+                        "O som de 'R' (em 'mercado')",
+                        "O som de 'T' (em 'mercado')"
+                    ],
+                    answer: "O som de 'T' (em 'mercado')"
+                },
+                {
+                    question: "<div class='quiz-context-text'>No Rio Grande do Sul, é comum chamarem o estojo escolar de 'penal'. Em algumas regiões do Nordeste, a fruta 'tangerina' é chamada de 'mexerica' ou 'mimosa'.</div>" + "Isso acontece por quê?",
+                    options: [
+                        "Algumas pessoas falam errado o português.",
+                        "O português tem regras diferentes em cada estado.",
+                        "É um exemplo de variação linguística regional.",
+                        "As frutas mudam de nome dependendo do clima.",
+                        "As escolas não ensinam o nome correto."
+                    ],
+                    answer: "É um exemplo de variação linguística regional."
+                },
+                {
+                    question: "<div class='quiz-context-text'><strong>Analise o diálogo:</strong><br><b>Médico:</b> 'O senhor precisa evitar a ingestão de lipídios e carboidratos.'<br><b>Paciente:</b> 'Quê, doutor??'<br><b>Médico:</b> 'O senhor precisa comer menos gordura e menos massa, seu Zé.'</div>" + "O que o médico fez na segunda fala?",
+                    options: [
+                        "Usou uma gíria para o paciente rir.",
+                        "Manteve a linguagem técnica para mostrar autoridade.",
+                        "Adequou a linguagem para ser compreendido pelo paciente.",
+                        "Falou mais alto porque o paciente não ouvia bem.",
+                        "Mudou o diagnóstico do paciente."
+                    ],
+                    answer: "Adequou a linguagem para ser compreendido pelo paciente."
+                },
+                {
+                    question: "Qual das frases abaixo está em uma linguagem predominantemente informal, típica de uma conversa entre amigos?",
+                    options: [
+                        "Solicito a Vossa Senhoria que compareça à reunião.",
+                        "E aí, mano! Beleza? 'Bora' no cinema mais tarde?",
+                        "O evento foi cancelado devido às fortes chuvas.",
+                        "Prezados clientes, informamos o novo horário de funcionamento.",
+                        "A análise do relatório será concluída na próxima semana."
+                    ],
+                    answer: "E aí, mano! Beleza? 'Bora' no cinema mais tarde?"
+                },
+                {
+                    question: "A palavra 'você' é hoje a forma mais comum de tratamento. Mas ela veio de uma forma mais antiga e longa, 'Vossa Mercê'. O que esse processo demonstra?",
+                    options: [
+                        "Que a língua é imutável e nunca muda.",
+                        "Que as pessoas antigamente eram mais educadas.",
+                        "Que a língua se transforma e se simplifica com o uso.",
+                        "Que 'Vossa Mercê' é a única forma correta.",
+                        "Que gírias são um problema moderno."
+                    ],
+                    answer: "Que a língua se transforma e se simplifica com o uso."
+                },
+                {
+                    question: "<div class='quiz-context-text'>Na frase: 'O juiz deu uma *bronca* no jogador que xingou o bandeirinha.'</div>A palavra 'bronca' tem o sentido de:",
+                    options: [
+                        "Um objeto de metal.",
+                        "Uma doença de pele.",
+                        "Uma advertência, uma repreensão.",
+                        "Um prêmio de consolação.",
+                        "Um tipo de cor."
+                    ],
+                    answer: "Uma advertência, uma repreensão."
+                },
+                {
+                    question: "Em qual das frases abaixo a palavra 'ponto' está sendo usada com o *mesmo* sentido que em 'Perdi o *ponto* do ônibus'?",
+                    options: [
+                        "Preciso dar um *ponto* nesta meia furada.",
+                        "O *ponto* de encontro da turma é na sorveteria.",
+                        "Fiz 10 *pontos* no jogo de basquete.",
+                        "Que *ponto* de vista interessante!",
+                        "A carne está no *ponto* certo."
+                    ],
+                    answer: "O *ponto* de encontro da turma é na sorveteria."
+                },
+                {
+                    question: "Quantos *substantivos* (palavras que dão nome a coisas) podemos formar com as vogais A, O, U na lacuna: B_LA?",
+                    options: [
+                        "Nenhum.",
+                        "Um.",
+                        "Dois.",
+                        "Três.",
+                        "Quatro."
+                    ],
+                    answer: "Três."
+                },
+                {
+                    question: "A palavra 'antônimo' significa 'palavra com sentido contrário'. Qual das alternativas apresenta um par que *não* é de antônimos?",
+                    options: [
+                        "Claro / Escuro",
+                        "Cheio / Vazio",
+                        "Bonito / Lindo",
+                        "Alto / Baixo",
+                        "Rápido / Lento"
+                    ],
+                    answer: "Bonito / Lindo"
+                },
+                {
+                    question: "Na frase 'Ele é um *gato*', dita por uma pessoa que vê um rapaz bonito, a palavra 'gato' está sendo usada em seu sentido:",
+                    options: [
+                        "Literal (denotativo - o rapaz é um felino).",
+                        "Figurado (conotativo - ele é bonito).",
+                        "Errado (o correto seria 'leão').",
+                        "Antigo (ninguém mais usa essa gíria).",
+                        "Científico (nome da espécie)."
+                    ],
+                    answer: "Figurado (conotativo - ele é bonito)."
+                },
+                {
+                    question: FABULA_LEAO + "O que fez o leão prender o ratinho?",
+                    options: [
+                        "Ele estava com muita fome e queria comê-lo.",
+                        "Ele foi acordado pelo passeio dos ratinhos.",
+                        "Ele queria ter um bicho de estimação.",
+                        "O ratinho roubou sua comida.",
+                        "O ratinho o desafiou para uma briga."
+                    ],
+                    answer: "Ele foi acordado pelo passeio dos ratinhos."
+                },
+                {
+                    question: FABULA_LEAO + "O leão soltou o ratinho porque:",
+                    options: [
+                        "O ratinho era muito forte e escapou.",
+                        "O leão ficou com pena ou achou o pedido divertido.",
+                        "O ratinho prometeu dinheiro ao leão.",
+                        "Os caçadores chegaram e o leão fugiu.",
+                        "O leão é vegetariano."
+                    ],
+                    answer: "O leão ficou com pena ou achou o pedido divertido."
+                },
+                {
+                    question: FABULA_LEAO + "Como o ratinho retribuiu o favor do leão?",
+                    options: [
+                        "Dando-lhe comida.",
+                        "Escondendo-o dos caçadores.",
+                        "Roendo as cordas da rede que o prendia.",
+                        "Chamando outros leões para ajudá-lo.",
+                        "Cantando uma canção para ele se acalmar."
+                    ],
+                    answer: "Roendo as cordas da rede que o prendia."
+                },
+                {
+                    question: FABULA_LEAO + "Qual é a moral (lição) principal desta fábula?",
+                    options: [
+                        "Os mais fortes nunca precisam dos mais fracos.",
+                        "Devemos sempre dormir debaixo de árvores.",
+                        "Ratos são mais espertos que leões.",
+                        "Um pequeno favor pode ter uma grande recompensa no futuro.",
+                        "Nunca se deve prender animais em redes."
+                    ],
+                    answer: "Um pequeno favor pode ter uma grande recompensa no futuro."
+                },
+                {
+                    question: FABULA_LEAO + "A palavra 'urro' (terceiro parágrafo) refere-se:",
+                    options: [
+                        "Ao som que os caçadores fazem.",
+                        "Ao som de árvores caindo.",
+                        "Ao barulho da rede se partindo.",
+                        "Ao grito forte e estrondoso do leão.",
+                        "Ao chiado do ratinho."
+                    ],
+                    answer: "Ao grito forte e estrondoso do leão."
+                },
+                {
+                    question: TEXTO_AVIAO + "Qual é o objetivo principal deste texto?",
+                    options: [
+                        "Vender papel sulfite.",
+                        "Ensinar os passos para construir um objeto.",
+                        "Contar a história do primeiro avião.",
+                        "Descrever como é um avião de verdade.",
+                        "Listar os materiais necessários para voar."
+                    ],
+                    answer: "Ensinar os passos para construir um objeto."
+                },
+                {
+                    question: TEXTO_AVIAO + "Os verbos no início de cada passo (Pegue, Dobre, Abra, Repita, etc.) estão no modo:",
+                    options: [
+                        "Indicativo (indicando um fato).",
+                        "Subjuntivo (indicando uma dúvida).",
+                        "Imperativo (indicando uma ordem ou instrução).",
+                        "Infinitivo (nomeando a ação).",
+                        "Gerúndio (indicando uma ação em progresso)."
+                    ],
+                    answer: "Imperativo (indicando uma ordem ou instrução)."
+                },
+                {
+                    question: TEXTO_AVIAO + "O que é a 'marca de centro' mencionada no passo 2?",
+                    options: [
+                        "Um desenho que já vem no papel.",
+                        "Uma linha que deve ser desenhada com régua.",
+                        "A dobra que foi feita e aberta para guiar os próximos passos.",
+                        "O lugar onde se deve colar o avião.",
+                        "O bico do avião."
+                    ],
+                    answer: "A dobra que foi feita e aberta para guiar os próximos passos."
+                },
+                {
+                    question: TEXTO_AVIAO + "Se uma pessoa pular o Passo 6 ('Dobre o pequeno 'bico' que sobrou para cima...'), o que provavelmente acontecerá?",
+                    options: [
+                        "O avião voará mais rápido.",
+                        "O avião ficará mais pesado.",
+                        "As abas ficarão soltas e o avião pode se desmontar.",
+                        "O avião mudará de cor.",
+                        "Não fará nenhuma diferença."
+                    ],
+                    answer: "As abas ficarão soltas e o avião pode se desmontar."
+                },
+                {
+                    question: TEXTO_NOTICIA + "Qual foi o evento principal descrito na notícia?",
+                    options: [
+                        "Uma enchente causada por chuva.",
+                        "Um dia de sol e calor na capital.",
+                        "Uma tempestade de vento forte e repentina.",
+                        "Um protesto que bloqueou as ruas.",
+                        "A falta de água na cidade."
+                    ],
+                    answer: "Uma tempestade de vento forte e repentina."
+                },
+                {
+                    question: TEXTO_NOTICIA + "Qual foi a principal consequência negativa da tempestade?",
+                    options: [
+                        "O trabalho das equipes de emergência durante a noite.",
+                        "A surpresa dos moradores.",
+                        "A queda de árvores e a falta de energia.",
+                        "O registro de 80 km/h.",
+                        "Não houve feridos graves."
+                    ],
+                    answer: "A queda de árvores e a falta de energia."
+                },
+                {
+                    question: TEXTO_NOTICIA + "A palavra 'vias' (no final do texto) refere-se a:",
+                    options: [
+                        "Árvores e galhos.",
+                        "Ruas e avenidas.",
+                        "Residências.",
+                        "Equipes de emergência.",
+                        "Companhias elétricas."
+                    ],
+                    answer: "Ruas e avenidas."
+                },
+                {
+                    question: TEXTO_NOTICIA + "O que significa a informação 'Felizmente, não houve registro de feridos graves'?",
+                    options: [
+                        "Que a tempestade não foi tão forte.",
+                        "Que as pessoas se machucaram, mas pouco.",
+                        "Que, apesar dos estragos materiais, ninguém se feriu seriamente.",
+                        "Que os hospitais estavam fechados.",
+                        "Que só as casas foram afetadas."
+                    ],
+                    answer: "Que, apesar dos estragos materiais, ninguém se feriu seriamente."
+                },
+                {
+                    question: "A palavra 'infelizmente' é formada pela adição de prefixo (in-) e sufixo (-mente) à palavra 'feliz'. Qual das palavras abaixo *não* é formada por um prefixo que significa 'não' ou 'contrário'?",
+                    options: [
+                        "Infeliz",
+                        "Desleal",
+                        "Impossível",
+                        "Incapaz",
+                        "Importar (trazer para dentro)"
+                    ],
+                    answer: "Importar (trazer para dentro)"
+                },
+                {
+                    question: "A palavra 'recalculou' usa o prefixo 're-', que significa 'fazer de novo'. Em qual das palavras abaixo o 're-' tem esse *mesmo* sentido?",
+                    options: [
+                        "Refazer",
+                        "República",
+                        "Religião",
+                        "Retirar",
+                        "Real"
+                    ],
+                    answer: "Refazer"
+                },
+                {
+                    question: "As palavras 'livraria', 'jornaleiro', 'sapateiro' e 'padaria' têm em comum:",
+                    options: [
+                        "São todas nomes de alimentos.",
+                        "Usam sufixos (-aria, -eiro) para indicar profissões ou locais de trabalho.",
+                        "São todas verbos de ação.",
+                        "São nomes de animais.",
+                        "Todas começam com consoantes."
+                    ],
+                    answer: "Usam sufixos (-aria, -eiro) para indicar profissões ou locais de trabalho."
+                },
+                {
+                    question: "Qual é a palavra 'primitiva' (a palavra original) que deu origem a 'chuvisco' e 'chuvarada'?",
+                    options: [
+                        "Chuva",
+                        "Chave",
+                        "Chão",
+                        "Vento",
+                        "Água"
+                    ],
+                    answer: "Chuva"
+                },
+                {
+                    question: "<div class='quiz-context-text'>Leia a frase: 'O menino viu o cachorro que estava correndo no parque.'</div>Quem estava correndo no parque?",
+                    options: [
+                        "O menino.",
+                        "O cachorro.",
+                        "O parque.",
+                        "O menino e o cachorro.",
+                        "A frase não deixa claro."
+                    ],
+                    answer: "O cachorro."
+                },
+                {
+                    question: "Na frase 'Maria comprou pão, queijo, presunto *e* suco', a palavra 'e' tem a função de:",
+                    options: [
+                        "Separar os itens.",
+                        "Indicar oposição (mas).",
+                        "Adicionar o último item da lista.",
+                        "Dar uma explicação.",
+                        "Mostrar dúvida."
+                    ],
+                    answer: "Adicionar o último item da lista."
+                },
+                {
+                    question: "Qual palavra poderia substituir 'mas' na frase 'Eu queria ir à praia, *mas* está chovendo', mantendo o mesmo sentido de oposição?",
+                    options: [
+                        "Portanto",
+                        "Porque",
+                        "Porém",
+                        "Quando",
+                        "Se"
+                    ],
+                    answer: "Porém"
+                },
+                {
+                    question: "<div class='quiz-context-text'>Na sexta-feira, Cadu diz: 'Pessoal, e se amanhã, em vez de jogar bola, a gente saísse para andar de skate?'</div>Qual a *única* suposição que podemos ter certeza com base *apenas* nesta frase?",
+                    options: [
+                        "O grupo costuma jogar bola aos sábados.",
+                        "Cadu não sabe jogar bola.",
+                        "Ninguém no grupo tem skate.",
+                        "Está chovendo muito na sexta-feira.",
+                        "Andar de skate é mais divertido que jogar bola."
+                    ],
+                    answer: "O grupo costuma jogar bola aos sábados."
+                },
+                {
+                    question: "<div class='quiz-context-text'>Joãozinho escuta a mãe dizer: 'Ai, ai, ai! O que foi que você aprontou agora?'</div>O sentimento expresso em 'Ai, ai, ai!' é de:",
+                    options: [
+                        "Orgulho, pois ele fez algo certo.",
+                        "Alívio, pois o perigo passou.",
+                        "Desaprovação, pois ela espera que ele tenha feito algo errado de novo.",
+                        "Saudade, pois fazia tempo que não o via.",
+                        "Dor física, pois ela se machucou."
+                    ],
+                    answer: "Desaprovação, pois ela espera que ele tenha feito algo errado de novo."
+                },
+                {
+                    question: "Um professor diz: 'Quem não trouxer o livro, não poderá fazer a atividade.' No dia seguinte, Maria não trouxe o livro. O que podemos concluir?",
+                    options: [
+                        "Maria não poderá fazer a atividade.",
+                        "O professor vai emprestar um livro para Maria.",
+                        "Maria não gosta de ler.",
+                        "A atividade será cancelada.",
+                        "Maria fez a atividade em casa."
+                    ],
+                    answer: "Maria não poderá fazer a atividade."
+                },
+                {
+                    question: "Se 'Todos os mamíferos bebem leite' e 'A baleia é um mamífero', qual é a conclusão lógica?",
+                    options: [
+                        "A baleia não bebe leite.",
+                        "Todos os mamíferos são baleias.",
+                        "A baleia bebe leite.",
+                        "Peixes bebem leite.",
+                        "A baleia vive na água."
+                    ],
+                    answer: "A baleia bebe leite."
+                },
+                {
+                    question: "<div class='quiz-context-text'>Leia a frase: 'A *felicidade* da *criança* era ver o *mar*.'</div>Quantos substantivos (palavras que dão nome) existem nesta frase?",
+                    options: [
+                        "Um",
+                        "Dois",
+                        "Três",
+                        "Quatro",
+                        "Nenhum"
+                    ],
+                    answer: "Três"
+                },
+                {
+                    question: "Na frase 'O cachorro *peludo* e *amigo* correu para a casa *grande*', quais palavras são adjetivos (dão característica)?",
+                    options: [
+                        "cachorro, casa",
+                        "peludo, amigo, grande",
+                        "correu, casa",
+                        "cachorro, peludo, amigo",
+                        "O, e, para"
+                    ],
+                    answer: "peludo, amigo, grande"
+                },
+                {
+                    question: "<div class='quiz-context-text'>'Ontem, nós *brincamos* no parque.'</div>A palavra 'brincamos' é um verbo e indica uma ação que:",
+                    options: [
+                        "Vai acontecer amanhã (Futuro).",
+                        "Está acontecendo agora (Presente).",
+                        "Já aconteceu (Passado / Pretérito).",
+                        "É um desejo ou dúvida.",
+                        "É um nome de um lugar."
+                    ],
+                    answer: "Já aconteceu (Passado / Pretérito)."
+                },
+                {
+                    question: "<div class='quiz-context-text'>'Fui ao mercado e comprei: frutas, legumes, iogurte e pão.'</div>As vírgulas ( , ) foram usadas para:",
+                    options: [
+                        "Indicar uma pergunta.",
+                        "Mostrar uma fala de personagem.",
+                        "Separar os itens de uma lista (enumeração).",
+                        "Indicar surpresa ou medo.",
+                        "Separar o nome da cidade."
+                    ],
+                    answer: "Separar os itens de uma lista (enumeração)."
+                },
+                {
+                    question: "Qual pontuação deve ser usada no final da frase 'Que dia *lindo*'?",
+                    options: [
+                        "Ponto final ( . )",
+                        "Ponto de interrogação ( ? )",
+                        "Ponto de exclamação ( ! )",
+                        "Vírgula ( , )",
+                        "Travessão ( — )"
+                    ],
+                    answer: "Ponto de exclamação ( ! )"
+                },
+                {
+                    question: "<div class='quiz-context-text'>Leia o diálogo:<br>— Você vai à festa?<br>— Claro que vou!</div>O travessão (—) foi usado para:",
+                    options: [
+                        "Separar uma lista de compras.",
+                        "Indicar a fala de um personagem.",
+                        "Mostrar que a frase terminou.",
+                        "Fazer uma pergunta.",
+                        "Indicar o nome de um livro."
+                    ],
+                    answer: "Indicar a fala de um personagem."
+                }
+            ];
+
+            let currentQuestionIndex = 0;
+            let score = 0;
+            let questionsAnswered = false;
+
+            const quizContainer = document.getElementById('quiz-container');
+            const quizResults = document.getElementById('quiz-results');
+            
+            const questionNumberEl = document.getElementById('question-number');
+            const scoreEl = document.getElementById('score');
+            const questionTextEl = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('quiz-options');
+            const feedbackEl = document.getElementById('quiz-feedback');
+            const nextButton = document.getElementById('next-question-btn');
+            const restartButton = document.getElementById('restart-quiz-btn');
+
+            function loadQuestion() {
+                questionsAnswered = false;
+                feedbackEl.innerHTML = '';
+                nextButton.classList.add('hidden');
+                optionsContainer.innerHTML = '';
+
+                if (currentQuestionIndex >= quizData.length) {
+                    showResults();
+                    return;
+                }
+
+                const currentQuestion = quizData[currentQuestionIndex];
+                questionNumberEl.textContent = currentQuestionIndex + 1;
+                questionTextEl.innerHTML = currentQuestion.question;
+
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.innerHTML = option;
+                    button.classList.add('quiz-option', 'w-full', 'text-left', 'bg-gray-100', 'text-gray-800', 'font-medium', 'py-4', 'px-6', 'rounded-lg', 'border', 'border-gray-200');
+                    button.onclick = () => selectAnswer(option, button);
+                    optionsContainer.appendChild(button);
+                });
+            }
+
+            function selectAnswer(selectedOption, buttonElement) {
+                if (questionsAnswered) return;
+                questionsAnswered = true;
+
+                const currentQuestion = quizData[currentQuestionIndex];
+                const isCorrect = selectedOption === currentQuestion.answer;
+
+                if (isCorrect) {
+                    score++;
+                    buttonElement.classList.add('quiz-correct');
+                    feedbackEl.innerHTML = `<strong class="text-green-600">Correto!</strong>`;
+                } else {
+                    buttonElement.classList.add('quiz-wrong');
+                    feedbackEl.innerHTML = `<strong class="text-red-600">Incorreto.</strong> A resposta correta é: "${currentQuestion.answer}"`;
+                }
+                
+                scoreEl.textContent = score;
+
+                Array.from(optionsContainer.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.innerHTML === currentQuestion.answer && !isCorrect) {
+                        btn.classList.add('quiz-reveal-correct');
+                    }
+                });
+
+                if (currentQuestionIndex < quizData.length - 1) {
+                    nextButton.textContent = "Próxima Questão";
+                } else {
+                    nextButton.textContent = "Ver Resultados";
+                }
+                nextButton.classList.remove('hidden');
+            }
+
+            function nextQuestion() {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+
+            function showResults() {
+                quizContainer.classList.add('hidden');
+                quizResults.classList.remove('hidden');
+
+                const wrongAnswers = quizData.length - score;
+                const percentage = ((score / quizData.length) * 100).toFixed(0);
+
+                document.getElementById('results-correct').textContent = score;
+                document.getElementById('results-wrong').textContent = wrongAnswers;
+                document.getElementById('results-percentage').textContent = `${percentage}%`;
+            }
+
+            function restartQuiz() {
+                currentQuestionIndex = 0;
+                score = 0;
+                scoreEl.textContent = 0;
+                quizResults.classList.add('hidden');
+                quizContainer.classList.remove('hidden');
+                loadQuestion();
+            }
+
+            nextButton.addEventListener('click', nextQuestion);
+            restartButton.addEventListener('click', restartQuiz);
+
+            loadQuestion();
+
+        });
+    </script>
+
+</body>
+</html>
